@@ -1,0 +1,282 @@
+<?php
+
+class EstudianteController extends Controller
+{
+	/**
+	 * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
+	 * using two-column layout. See 'protected/views/layouts/column2.php'.
+	 */
+	public $layout='//layouts/column2';
+
+	/**
+	 * @return array action filters
+	 */
+	public function filters()
+	{
+		return array(
+			'accessControl', // perform access control for CRUD operations
+			'postOnly + delete', // we only allow deletion via POST request
+		);
+	}
+
+	/**
+	 * Specifies the access control rules.
+	 * This method is used by the 'accessControl' filter.
+	 * @return array access control rules
+	 */
+	public function accessRules()
+	{
+		return array(
+			array('allow',  // allow all users to perform 'index' and 'view' actions
+				'actions'=>array('index','view'),
+				'users'=>array('*'),
+			),
+            array('allow', // allow authenticated user to perform 'create' and 'update' actions
+                'actions'=>array('create','update','admin','delete'),
+                'users'=>array('@'),
+            ),
+			array('allow', // allow admin user to perform 'admin' and 'delete' actions
+				'actions'=>array('admin','delete'),
+				'users'=>array('admin'),
+			),
+			array('deny',  // deny all users
+				'users'=>array('*'),
+			),
+		);
+	}
+
+	/**
+	 * Displays a particular model.
+	 * @param integer $id the ID of the model to be displayed
+	 */
+	public function actionView($id)
+	{
+        $modelCSearch=new Centros('search');
+		$this->render('view',array(
+			'model'=>$this->loadModel($id),
+            'modelCSearch'=>$modelCSearch
+		));
+	}
+
+	/**
+	 * Creates a new model.
+	 * If creation is successful, the browser will be redirected to the 'view' page.
+	 */
+	public function actionCreate()
+	{
+		$model=new Estudiante;
+        $modelUs=new Usuarios;
+        $modelCSearch=new Centros('search');
+
+		// Uncomment the following line if AJAX validation is needed
+		// $this->performAjaxValidation($model);
+        if(isset($_GET['idCentro']))
+        {
+
+            $idCentro=$_GET['idCentro'];
+            $centro=Centros::model()->findByPk($idCentro);
+            $nombreCentro=$centro->nomCentro;
+        }
+        else
+        {
+            $idCentro=0;
+            $nombreCentro="No Asignado";
+        }
+		if(isset($_POST['Estudiante']))
+		{
+			$model->attributes=$_POST['Estudiante'];
+			$model->idCentroEst=$idCentro;
+
+            $dias=array(0,0,0,0,0,0);
+            $diasA=array(0,0,0,0,0,0);
+            if( isset($_POST['lunes']))
+        {
+            $dias[0]=1;
+        }
+            if( isset($_POST['martes']))
+            {
+                $dias[1]=1;
+            }
+            if( isset($_POST['miercoles']))
+            {
+                $dias[2]=1;
+            }
+            if( isset($_POST['jueves']))
+            {
+                $dias[3]=1;
+            }
+            if( isset($_POST['viernes']))
+            {
+                $dias[4]=1;
+            }
+            if( isset($_POST['sabado']))
+            {
+                $dias[5]=1;
+            }
+            if( isset($_POST['lunesd']))
+            {
+                $diasA[0]=1;
+            }
+            if( isset($_POST['martesd']))
+            {
+                $diasA[1]=1;
+            }
+            if( isset($_POST['miercolesd']))
+            {
+                $diasA[2]=1;
+            }
+            if( isset($_POST['juevesd']))
+            {
+                $diasA[3]=1;
+            }
+            if( isset($_POST['viernesd']))
+            {
+                $diasA[4]=1;
+            }
+            if( isset($_POST['sabadod']))
+            {
+                $diasA[5]=1;
+            }
+            $dias=serialize($dias);
+            $diasA=serialize($diasA);
+            $model->diasEstudiante=$dias;
+            $model->diasEstComida=$diasA;
+
+            $modelUs->apellUsuario=$_POST['Estudiante']['apellEstudiante'];
+            $modelUs->apell2Usuario=$_POST['Estudiante']['secApellEstudante'];
+            $modelUs->nomUsuario=$_POST['Estudiante']['nomEstudiante'];
+            $modelUs->login=$_POST['Estudiante']['emailEstudiante'];
+            $modelUs->password=sha1($_POST['Estudiante']['ciEstudiante']);
+            $modelUs->nivel=1;
+            $modelUs->save();
+            $model->idUsuario=$modelUs->idUsuario;
+			if($model->save())
+                $this->redirect(array('view','id'=>$model->idEstudiante));
+				//$this->redirect(array('view','id'=>$model->idEstudiante,'modelCSearch'=>$modelCSearch,));
+		}
+
+		$this->render('create',array(
+			'model'=>$model,
+            'modelCSearch'=>$modelCSearch,
+            'nombreCentro'=>$nombreCentro,
+            'idCentro'=>$idCentro
+		));
+	}
+
+	/**
+	 * Updates a particular model.
+	 * If update is successful, the browser will be redirected to the 'view' page.
+	 * @param integer $id the ID of the model to be updated
+	 */
+    public function actionUpdate($id)
+    {
+        $model=$this->loadModel($id);
+        $modelCSearch=new Centros('search');
+
+        // Uncomment the following line if AJAX validation is needed
+        // $this->performAjaxValidation($model);
+
+
+
+
+        if(isset($_GET['idCentro']))
+        {
+
+            $idCentro=$_GET['idCentro'];
+            $centro=Centros::model()->findByPk($idCentro);
+            $nombreCentro=$centro->nomCentro;
+        }
+        else if($model->idCentroEst==0)
+        {
+            $idCentro=0;
+            $nombreCentro="No Asignado";
+        }
+        else{
+            $idCentro=$model->idCentroEst;
+            $centro=Centros::model()->findByPk($idCentro);
+            $nombreCentro=$centro->nomCentro;
+        }
+        if(isset($_POST['Estudiante']))
+        {
+            $model->attributes=$_POST['Estudiante'];
+            $model->idCentroEst=$idCentro;
+            if($model->save())
+                $this->redirect(array('view','id'=>$model->idEstudiante));
+        }
+
+        $this->render('update',array(
+            'model'=>$model,
+            'modelCSearch'=>$modelCSearch,
+            'nombreCentro'=>$nombreCentro,
+            'idCentro'=>$idCentro
+        ));
+    }
+
+	/**
+	 * Deletes a particular model.
+	 * If deletion is successful, the browser will be redirected to the 'admin' page.
+	 * @param integer $id the ID of the model to be deleted
+	 */
+	public function actionDelete($id)
+	{
+		$this->loadModel($id)->delete();
+
+		// if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
+		if(!isset($_GET['ajax']))
+			$this->redirect(isset($_POST['returnUrl']) ? $_POST['returnUrl'] : array('admin'));
+	}
+
+	/**
+	 * Lists all models.
+	 */
+	public function actionIndex()
+	{
+		$dataProvider=new CActiveDataProvider('Estudiante');
+		$this->render('index',array(
+			'dataProvider'=>$dataProvider,
+		));
+	}
+
+	/**
+	 * Manages all models.
+	 */
+	public function actionAdmin()
+	{
+		$model=new Estudiante('search');
+		$model->unsetAttributes();  // clear any default values
+		if(isset($_GET['Estudiante']))
+			$model->attributes=$_GET['Estudiante'];
+
+		$this->render('admin',array(
+			'model'=>$model,
+		));
+	}
+
+	/**
+	 * Returns the data model based on the primary key given in the GET variable.
+	 * If the data model is not found, an HTTP exception will be raised.
+	 * @param integer $id the ID of the model to be loaded
+	 * @return Estudiante the loaded model
+	 * @throws CHttpException
+	 */
+	public function loadModel($id)
+	{
+		$model=Estudiante::model()->findByPk($id);
+		if($model===null)
+			throw new CHttpException(404,'The requested page does not exist.');
+		return $model;
+	}
+
+	/**
+	 * Performs the AJAX validation.
+	 * @param Estudiante $model the model to be validated
+	 */
+	protected function performAjaxValidation($model)
+	{
+		if(isset($_POST['ajax']) && $_POST['ajax']==='estudiante-form')
+		{
+			echo CActiveForm::validate($model);
+			Yii::app()->end();
+		}
+	}
+}
